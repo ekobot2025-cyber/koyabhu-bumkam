@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="none">
+  <defs>
+    <linearGradient id="kgGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="kgGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <!-- Outer ring with subtle border -->
+  <circle cx="120" cy="120" r="112" fill="#0B192C" />
+  <circle cx="120" cy="120" r="106" fill="#FFFFFF" />
+  <circle cx="120" cy="120" r="100" fill="#F0FDF4" />
+
+  <!-- Shield / Emblem Base -->
+  <path d="M120 30 C160 30 190 50 190 100 C190 155 140 185 120 200 C100 185 50 155 50 100 C50 50 80 30 120 30 Z" fill="url(#kgGreen)" filter="url(#shadow)"/>
+  
+  <!-- Egg Shape in Center (Peternakan Ayam Petelur) -->
+  <ellipse cx="120" cy="125" rx="34" ry="44" fill="url(#kgGold)" />
+  <ellipse cx="116" cy="118" rx="28" ry="36" fill="#FEF3C7" opacity="0.4" />
+
+  <!-- Stylized Sprouts / Wings on Left and Right -->
+  <!-- Left Sprout/Wing -->
+  <path d="M120 160 C90 150 70 120 75 90 C85 110 100 130 120 140 Z" fill="#34D399" />
+  <path d="M120 145 C80 130 65 95 72 70 C85 90 105 115 120 125 Z" fill="#A7F3D0" />
+  
+  <!-- Right Sprout/Wing -->
+  <path d="M120 160 C150 150 170 120 165 90 C155 110 140 130 120 140 Z" fill="#34D399" />
+  <path d="M120 145 C160 130 175 95 168 70 C155 90 135 115 120 125 Z" fill="#A7F3D0" />
+
+  <!-- Central Crest / Star -->
+  <circle cx="120" cy="55" r="8" fill="#FBBF24" />
+</svg>
