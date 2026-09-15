@@ -6,12 +6,19 @@ import {
   AlertTriangle,
   ClipboardList,
   CheckCircle,
+  CheckCircle2,
+  CheckCheck,
   FileSpreadsheet,
   Trash2,
   Edit2,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Send,
+  Lock,
+  Unlock,
+  Clock
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -21,6 +28,7 @@ import { formatNumber, formatTanggalShort, formatTanggalWIT } from '../utils/for
 import { exportToCSV } from '../utils/exportHelpers';
 
 export default function ChickenRecording() {
+  const { user, isAdmin, isPetugasKandang } = useAuth();
   const [recordings, setRecordings] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(false);
@@ -210,6 +218,16 @@ export default function ChickenRecording() {
     }
   };
 
+  // Handle Workflow Status Transition (Draft -> Dikirim -> Diverifikasi -> Dikunci)
+  const handleWorkflowChange = async (rec, targetStatus) => {
+    try {
+      await api.patch(`/recordings/${rec.id}/workflow`, { target_status: targetStatus });
+      fetchRecordings(pagination.page);
+    } catch (err) {
+      alert('Gagal memperbarui status alur: ' + err.message);
+    }
+  };
+
   const handleExportCSV = () => {
     const headers = {
       date: 'Tanggal',
@@ -326,26 +344,122 @@ export default function ChickenRecording() {
       )
     },
     {
+      header: 'Alur Dokumen',
+      accessor: 'workflow_status',
+      render: (row) => {
+        const wf = row.workflow_status || 'DRAFT';
+        if (wf === 'DIKUNCI') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-white shadow-xs">
+              <Lock className="w-3 h-3 text-emerald-400" /> Dikunci
+            </span>
+          );
+        }
+        if (wf === 'DIVERIFIKASI') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#edf6d7] text-[#2c5b20] border border-[#d6ebbb]">
+              <CheckCircle2 className="w-3 h-3 text-[#55a938]" /> Diverifikasi
+            </span>
+          );
+        }
+        if (wf === 'DIKIRIM') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+              <Send className="w-3 h-3 text-sky-500" /> Diajukan
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-500" /> Draft
+          </span>
+        );
+      }
+    },
+    {
       header: 'Aksi',
       className: 'text-right',
-      render: (row) => row.status === 'ACTIVE' && (
-        <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => handleOpenEdit(row)}
-            className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-            title="Edit Recording"
-          >
-            <Edit2 className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setVoidRecord(row)}
-            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            title="Batalkan (VOID)"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      )
+      render: (row) => {
+        const isLocked = row.workflow_status === 'DIKUNCI';
+        const isDraft = !row.workflow_status || row.workflow_status === 'DRAFT';
+        const isSubmitted = row.workflow_status === 'DIKIRIM';
+        const isVerified = row.workflow_status === 'DIVERIFIKASI';
+
+        return row.status === 'ACTIVE' && (
+          <div className="flex items-center justify-end gap-1 flex-wrap">
+            {/* Workflow Action Transitions */}
+            {/* Petugas / Admin: Kirim ke Ketua if Draft */}
+            {isDraft && (
+              <button
+                onClick={() => handleWorkflowChange(row, 'DIKIRIM')}
+                title="Ajukan ke Ketua BUMKam"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              >
+                <Send className="w-3 h-3" />
+                <span>Kirim</span>
+              </button>
+            )}
+
+            {/* Admin: Verifikasi if Dikirim */}
+            {isAdmin && isSubmitted && (
+              <button
+                onClick={() => handleWorkflowChange(row, 'DIVERIFIKASI')}
+                title="Verifikasi Recording Kandang"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-[#55a938] hover:bg-[#46902e] text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              >
+                <CheckCheck className="w-3 h-3" />
+                <span>Verifikasi</span>
+              </button>
+            )}
+
+            {/* Admin: Kunci if Diverifikasi */}
+            {isAdmin && isVerified && (
+              <button
+                onClick={() => handleWorkflowChange(row, 'DIKUNCI')}
+                title="Kunci Recording (Permanen)"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              >
+                <Lock className="w-3 h-3" />
+                <span>Kunci</span>
+              </button>
+            )}
+
+            {/* Admin: Buka Kunci if Dikunci */}
+            {isAdmin && isLocked && (
+              <button
+                onClick={() => handleWorkflowChange(row, 'DRAFT')}
+                title="Buka Kunci untuk Koreksi"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              >
+                <Unlock className="w-3 h-3" />
+                <span>Buka</span>
+              </button>
+            )}
+
+            {/* Edit button: Active, not locked, and permitted */}
+            {!isLocked && (isAdmin || isDraft) && (
+              <button
+                onClick={() => handleOpenEdit(row)}
+                className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                title="Edit Recording"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Void button: Admin only, Active, and not locked */}
+            {isAdmin && !isLocked && (
+              <button
+                onClick={() => setVoidRecord(row)}
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                title="Batalkan (VOID)"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
@@ -489,42 +603,80 @@ export default function ChickenRecording() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">
                   Ayam Masuk (+)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.chicken_in}
-                  onChange={(e) => setFormData({ ...formData, chicken_in: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 font-semibold"
-                />
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_in: Math.max(0, (parseInt(prev.chicken_in, 10) || 0) - 1) }))}
+                    className="px-2 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-l-lg font-bold text-xs cursor-pointer"
+                  >-</button>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.chicken_in}
+                    onChange={(e) => setFormData({ ...formData, chicken_in: e.target.value })}
+                    className="w-full py-2 text-xs bg-white border-y border-slate-300 text-center font-bold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_in: (parseInt(prev.chicken_in, 10) || 0) + 1 }))}
+                    className="px-2 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-r-lg font-bold text-xs cursor-pointer"
+                  >+</button>
+                </div>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-rose-700 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-rose-700 uppercase mb-1">
                   Ayam Mati (-)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.chicken_dead}
-                  onChange={(e) => setFormData({ ...formData, chicken_dead: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-white border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 font-bold text-rose-700"
-                />
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_dead: Math.max(0, (parseInt(prev.chicken_dead, 10) || 0) - 1) }))}
+                    className="px-2 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 rounded-l-lg font-bold text-xs cursor-pointer"
+                  >-</button>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.chicken_dead}
+                    onChange={(e) => setFormData({ ...formData, chicken_dead: e.target.value })}
+                    className="w-full py-2 text-xs bg-white border-y border-rose-300 text-center font-bold text-rose-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_dead: (parseInt(prev.chicken_dead, 10) || 0) + 1 }))}
+                    className="px-2 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-300 text-rose-700 rounded-r-lg font-bold text-xs cursor-pointer"
+                  >+</button>
+                </div>
               </div>
+
               <div>
-                <label className="block text-xs font-bold text-amber-700 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-amber-700 uppercase mb-1">
                   Ayam Afkir (-)
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.chicken_culled}
-                  onChange={(e) => setFormData({ ...formData, chicken_culled: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-white border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-semibold text-amber-700"
-                />
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_culled: Math.max(0, (parseInt(prev.chicken_culled, 10) || 0) - 1) }))}
+                    className="px-2 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-l-lg font-bold text-xs cursor-pointer"
+                  >-</button>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.chicken_culled}
+                    onChange={(e) => setFormData({ ...formData, chicken_culled: e.target.value })}
+                    className="w-full py-2 text-xs bg-white border-y border-amber-300 text-center font-bold text-amber-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, chicken_culled: (parseInt(prev.chicken_culled, 10) || 0) + 1 }))}
+                    className="px-2 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-700 rounded-r-lg font-bold text-xs cursor-pointer"
+                  >+</button>
+                </div>
               </div>
             </div>
 

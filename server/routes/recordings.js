@@ -1,8 +1,11 @@
 import express from 'express';
 import { db, transaction, generateUUID, getWITTimestamp, getWITDate, logAudit } from '../db.js';
-import { authenticateToken } from '../auth.js';
+import { authenticateToken, requireRole } from '../auth.js';
 
 const router = express.Router();
+
+// Allow ADMIN (Ketua BUMKam) and PETUGAS_KANDANG
+router.use(authenticateToken, requireRole('ADMIN', 'PETUGAS_KANDANG'));
 
 // GET /api/recordings/latest (Fetch latest day recording to auto-fill initial population)
 router.get('/latest', authenticateToken, (req, res) => {
@@ -183,9 +186,9 @@ router.post('/', authenticateToken, (req, res) => {
       INSERT INTO chicken_recordings (
         id, date, initial_population, chicken_in, chicken_dead, chicken_culled,
         final_population, eggs_produced, eggs_good, eggs_broken, feed_consumed_kg,
-        vaccine_info, vitamin_info, notes, created_by, created_by_name,
+        vaccine_info, vitamin_info, notes, workflow_status, created_by, created_by_name,
         status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, 'ACTIVE', ?, ?)
     `).run(
       id,
       date,
@@ -230,6 +233,15 @@ router.put('/:id', authenticateToken, (req, res) => {
   const rec = db.prepare('SELECT * FROM chicken_recordings WHERE id = ?').get(req.params.id);
   if (!rec) return res.status(404).json({ error: 'Data recording tidak ditemukan.' });
   if (rec.status === 'VOID') return res.status(400).json({ error: 'Recording yang telah dibatalkan tidak dapat diedit.' });
+
+  // Workflow Lock & Role Check
+  if (rec.workflow_status === 'DIKUNCI') {
+    return res.status(403).json({ error: 'Data recording telah berstatus DIKUNCI oleh Ketua BUMKam dan tidak dapat diedit.' });
+  }
+  const isPetugas = req.user.role === 'PETUGAS_KANDANG' || req.user.role === 'PETUGAS';
+  if (isPetugas && rec.workflow_status !== 'DRAFT') {
+    return res.status(403).json({ error: `Data berstatus ${rec.workflow_status}. Petugas hanya dapat mengubah data berstatus DRAFT.` });
+  }
 
   const {
     date,
@@ -309,8 +321,12 @@ router.put('/:id', authenticateToken, (req, res) => {
   }
 });
 
-// POST /api/recordings/:id/void
+// POST /api/recordings/:id/void (Admin only)
 router.post('/:id/void', authenticateToken, (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Hanya Ketua BUMKam yang berhak membatalkan (VOID) recording.' });
+  }
+
   const { reason } = req.body;
   const rec = db.prepare('SELECT * FROM chicken_recordings WHERE id = ?').get(req.params.id);
   if (!rec) return res.status(404).json({ error: 'Recording tidak ditemukan.' });
@@ -334,4 +350,91 @@ router.post('/:id/void', authenticateToken, (req, res) => {
   }
 });
 
+// PATCH /api/recordings/:id/workflow
+router.patch('/:id/workflow', authenticateToken, (req, res) => {
+  const rec = db.prepare('SELECT * FROM chicken_recordings WHERE id = ?').get(req.params.id);
+  if (!rec) return res.status(404).json({ error: 'Data recording tidak ditemukan.' });
+  if (rec.status === 'VOID') return res.status(400).json({ error: 'Recording VOID tidak dapat diubah alurnya.' });
+
+  const { target_status } = req.body;
+  const validStatuses = ['DRAFT', 'DIKIRIM', 'DIVERIFIKASI', 'DIKUNCI'];
+  if (!validStatuses.includes(target_status)) {
+    return res.status(400).json({ error: 'Status alur tidak valid.' });
+  }
+
+  const now = getWITTimestamp();
+  const isAdmin = req.user.role === 'ADMIN';
+
+  // Permissions rule:
+  // Petugas Kandang can only transition DRAFT -> DIKIRIM
+  if (!isAdmin) {
+    if (rec.workflow_status === 'DRAFT' && target_status === 'DIKIRIM') {
+      // Allowed
+    } else {
+      return res.status(403).json({ error: 'Petugas hanya berhak mengajukan status DRAFT ke DIKIRIM.' });
+    }
+  }
+
+  let verifiedBy = rec.verified_by;
+  let verifiedAt = rec.verified_at;
+  let lockedBy = rec.locked_by;
+  let lockedAt = rec.locked_at;
+
+  if (target_status === 'DIVERIFIKASI') {
+    verifiedBy = req.user.name;
+    verifiedAt = now;
+  } else if (target_status === 'DIKUNCI') {
+    if (!verifiedBy) {
+      verifiedBy = req.user.name;
+      verifiedAt = now;
+    }
+    lockedBy = req.user.name;
+    lockedAt = now;
+  } else if (target_status === 'DRAFT') {
+    // Admin unlock
+    lockedBy = null;
+    lockedAt = null;
+  }
+
+  db.prepare(`
+    UPDATE chicken_recordings SET
+      workflow_status = ?,
+      verified_by = ?,
+      verified_at = ?,
+      locked_by = ?,
+      locked_at = ?,
+      updated_by = ?,
+      updated_by_name = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    target_status,
+    verifiedBy,
+    verifiedAt,
+    lockedBy,
+    lockedAt,
+    req.user.id,
+    req.user.name,
+    now,
+    rec.id
+  );
+
+  logAudit(
+    'WORKFLOW_UPDATE',
+    'RECORDING',
+    rec.id,
+    rec.date,
+    req.user.id,
+    req.user.name,
+    `Perubahan status alur recording ${rec.date}: ${rec.workflow_status} -> ${target_status}`
+  );
+
+  const updated = db.prepare('SELECT * FROM chicken_recordings WHERE id = ?').get(rec.id);
+  res.json({
+    message: `Status recording berhasil diubah menjadi ${target_status}.`,
+    recording: updated
+  });
+});
+
 export default router;
+

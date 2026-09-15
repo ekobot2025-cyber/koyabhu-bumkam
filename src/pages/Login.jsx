@@ -240,42 +240,58 @@ export default function Login() {
                 </button>
               </form>
 
-              {/* Quick Account Switcher (Dikta styled pills) */}
+              {/* Quick Account Switcher (Dikta styled 3-role pills) */}
               <div className="mt-6 pt-5 border-t border-slate-100">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2 text-center">
-                  Pilih Akun Demo Cepat:
+                  Pilih Akun Hak Akses (3 Role):
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => handleQuickLogin('admin', 'admin123')}
-                    className={`py-2 px-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`py-2 px-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       username === 'admin'
                         ? 'bg-[#edf6d7] border-[#7ebd58] text-[#18321c] shadow-xs'
                         : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs">Ketua BUMKam</span>
+                      <span className="font-black text-[11px]">Ketua</span>
                       {username === 'admin' && <CheckCircle2 className="w-3.5 h-3.5 text-[#55a938]" />}
                     </div>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Role Admin (Penuh)</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">Akses Penuh</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleQuickLogin('petugas', 'petugas123')}
-                    className={`py-2 px-3 rounded-xl border text-left transition-all cursor-pointer ${
-                      username === 'petugas'
+                    onClick={() => handleQuickLogin('kandang', 'kandang123')}
+                    className={`py-2 px-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      username === 'kandang' || username === 'petugas'
                         ? 'bg-[#edf6d7] border-[#7ebd58] text-[#18321c] shadow-xs'
                         : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs">Petugas Kandang</span>
-                      {username === 'petugas' && <CheckCircle2 className="w-3.5 h-3.5 text-[#55a938]" />}
+                      <span className="font-black text-[11px]">Kandang</span>
+                      {(username === 'kandang' || username === 'petugas') && <CheckCircle2 className="w-3.5 h-3.5 text-[#55a938]" />}
                     </div>
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Role Recording Saja</span>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">Recording Saja</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickLogin('penjualan', 'penjualan123')}
+                    className={`py-2 px-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      username === 'penjualan'
+                        ? 'bg-[#edf6d7] border-[#7ebd58] text-[#18321c] shadow-xs'
+                        : 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-[11px]">Penjualan</span>
+                      {username === 'penjualan' && <CheckCircle2 className="w-3.5 h-3.5 text-[#55a938]" />}
+                    </div>
+                    <span className="text-[10px] text-slate-500 block mt-0.5 leading-tight">Jual Telur Saja</span>
                   </button>
                 </div>
               </div>

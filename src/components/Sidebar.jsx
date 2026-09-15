@@ -15,52 +15,65 @@ import {
 import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isPetugasPenjualan } = useAuth();
 
-  const menuSections = isAdmin
-    ? [
-        {
-          title: null,
-          items: [
-            { id: 'dashboard', label: 'Beranda', icon: LayoutDashboard }
-          ]
-        },
-        {
-          title: 'OPERASIONAL',
-          items: [
-            { id: 'sales', label: 'Penjualan Telur', icon: ShoppingCart },
-            { id: 'recording', label: 'Recording Ayam', icon: ClipboardList }
-          ]
-        },
-        {
-          title: 'KEUANGAN',
-          items: [
-            { id: 'cashbook', label: 'Buku Kas', icon: Wallet },
-            { id: 'income', label: 'Pemasukan Lainnya', icon: ArrowDownRight },
-            { id: 'expenses', label: 'Pengeluaran', icon: ArrowUpRight }
-          ]
-        },
-        {
-          title: 'LAPORAN',
-          items: [
-            { id: 'reports', label: 'Pusat Laporan', icon: FileText }
-          ]
-        },
-        {
-          title: 'SISTEM',
-          items: [
-            { id: 'settings', label: 'Pengaturan', icon: Settings }
-          ]
-        }
-      ]
-    : [
-        {
-          title: 'OPERASIONAL KANDANG',
-          items: [
-            { id: 'recording', label: 'Recording Ayam', icon: ClipboardList }
-          ]
-        }
-      ];
+  let menuSections = [];
+  if (isAdmin) {
+    menuSections = [
+      {
+        title: null,
+        items: [
+          { id: 'dashboard', label: 'Beranda', icon: LayoutDashboard }
+        ]
+      },
+      {
+        title: 'OPERASIONAL',
+        items: [
+          { id: 'sales', label: 'Penjualan Telur', icon: ShoppingCart },
+          { id: 'recording', label: 'Recording Ayam', icon: ClipboardList }
+        ]
+      },
+      {
+        title: 'KEUANGAN',
+        items: [
+          { id: 'cashbook', label: 'Buku Kas', icon: Wallet },
+          { id: 'income', label: 'Pemasukan Lainnya', icon: ArrowDownRight },
+          { id: 'expenses', label: 'Pengeluaran', icon: ArrowUpRight }
+        ]
+      },
+      {
+        title: 'LAPORAN',
+        items: [
+          { id: 'reports', label: 'Pusat Laporan', icon: FileText }
+        ]
+      },
+      {
+        title: 'SISTEM',
+        items: [
+          { id: 'settings', label: 'Pengaturan', icon: Settings }
+        ]
+      }
+    ];
+  } else if (isPetugasPenjualan) {
+    menuSections = [
+      {
+        title: 'OPERASIONAL PENJUALAN',
+        items: [
+          { id: 'sales', label: 'Penjualan Telur Harian', icon: ShoppingCart }
+        ]
+      }
+    ];
+  } else {
+    // Petugas Kandang
+    menuSections = [
+      {
+        title: 'OPERASIONAL KANDANG',
+        items: [
+          { id: 'recording', label: 'Recording Ayam & Telur', icon: ClipboardList }
+        ]
+      }
+    ];
+  }
 
   const handleNavClick = (id) => {
     setActiveTab(id);

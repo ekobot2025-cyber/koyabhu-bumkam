@@ -43,9 +43,21 @@ export function authenticateToken(req, res, next) {
 
 export function requireRole(...allowedRoles) {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Anda tidak memiliki hak akses untuk tindakan ini.' });
+    if (!req.user) {
+      return res.status(401).json({ error: 'Pengguna belum terautentikasi.' });
+    }
+
+    const userRole = req.user.role;
+    // Normalize role: PETUGAS is equivalent to PETUGAS_KANDANG
+    const isAllowed =
+      allowedRoles.includes(userRole) ||
+      (allowedRoles.includes('PETUGAS_KANDANG') && userRole === 'PETUGAS') ||
+      (allowedRoles.includes('PETUGAS') && userRole === 'PETUGAS_KANDANG');
+
+    if (!isAllowed) {
+      return res.status(403).json({ error: 'Akses ditolak. Anda tidak memiliki izin untuk fitur atau menu ini.' });
     }
     next();
   };
 }
+

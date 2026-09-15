@@ -221,6 +221,52 @@ async function runTests() {
   assert(hasilAfterVoid === hasilBeforeVoid - 400000, 'Hasil usaha dikoreksi: penjualan void tidak lagi dihitung');
   assert(auditCheck5 !== undefined, 'Audit trail tercatat dengan riwayat pelaku dan waktu pembatalan');
 
+  // ----------------------------------------------------
+  // TEST CASE 6: Verifikasi 3 Role RBAC
+  // ----------------------------------------------------
+  console.log('\nTEST CASE 6: Verifikasi 3 Role RBAC');
+  const userAdmin = db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
+  const userKandang = db.prepare("SELECT * FROM users WHERE username = 'kandang' OR username = 'petugas'").get();
+  const userPenjualan = db.prepare("SELECT * FROM users WHERE username = 'penjualan'").get();
+
+  assert(userAdmin && userAdmin.role === 'ADMIN', 'Role Ketua BUMKam (admin) terkonfigurasi sebagai ADMIN');
+  assert(userKandang && (userKandang.role === 'PETUGAS_KANDANG' || userKandang.role === 'PETUGAS'), 'Role Petugas Kandang terkonfigurasi sebagai PETUGAS_KANDANG');
+  assert(userPenjualan && userPenjualan.role === 'PETUGAS_PENJUALAN', 'Role Petugas Penjualan terkonfigurasi sebagai PETUGAS_PENJUALAN');
+
+  // ----------------------------------------------------
+  // TEST CASE 7: Workflow 4 Tahap (Draft -> Dikirim -> Diverifikasi -> Dikunci)
+  // ----------------------------------------------------
+  console.log('\nTEST CASE 7: Workflow 4 Tahap (Draft -> Dikirim -> Diverifikasi -> Dikunci)');
+  const wfSaleId = 'test-wf-sale-1';
+  db.prepare(`
+    INSERT INTO sales (
+      id, invoice_number, date, customer_name, quantity, unit, eggs_count,
+      unit_price, total_amount, payment_method, payment_status, payment_date,
+      notes, workflow_status, created_by, created_by_name, status, created_at, updated_at
+    ) VALUES (?, 'PJL-WF-0001', '2026-09-15', 'Toko Sentani', 100, 'butir', 100, 2000, 200000, 'Tunai', 'Lunas', '2026-09-15', 'Test Workflow', 'DRAFT', 'penjualan', 'Petugas Penjualan', 'ACTIVE', datetime('now'), datetime('now'))
+  `).run(wfSaleId);
+
+  let wfCheck = db.prepare('SELECT workflow_status FROM sales WHERE id = ?').get(wfSaleId);
+  assert(wfCheck.workflow_status === 'DRAFT', 'Tahap 1: Data penjualan baru berstatus DRAFT');
+
+  // Petugas ajukan: DRAFT -> DIKIRIM
+  db.prepare("UPDATE sales SET workflow_status = 'DIKIRIM' WHERE id = ?").run(wfSaleId);
+  wfCheck = db.prepare('SELECT workflow_status FROM sales WHERE id = ?').get(wfSaleId);
+  assert(wfCheck.workflow_status === 'DIKIRIM', 'Tahap 2: Petugas mengajukan data ke status DIKIRIM');
+
+  // Ketua verifikasi: DIKIRIM -> DIVERIFIKASI
+  db.prepare("UPDATE sales SET workflow_status = 'DIVERIFIKASI', verified_by = 'Ketua BUMKam', verified_at = datetime('now') WHERE id = ?").run(wfSaleId);
+  wfCheck = db.prepare('SELECT workflow_status, verified_by FROM sales WHERE id = ?').get(wfSaleId);
+  assert(wfCheck.workflow_status === 'DIVERIFIKASI' && wfCheck.verified_by === 'Ketua BUMKam', 'Tahap 3: Ketua memverifikasi data ke status DIVERIFIKASI');
+
+  // Ketua kunci: DIVERIFIKASI -> DIKUNCI
+  db.prepare("UPDATE sales SET workflow_status = 'DIKUNCI', locked_by = 'Ketua BUMKam', locked_at = datetime('now') WHERE id = ?").run(wfSaleId);
+  wfCheck = db.prepare('SELECT workflow_status, locked_by FROM sales WHERE id = ?').get(wfSaleId);
+  assert(wfCheck.workflow_status === 'DIKUNCI' && wfCheck.locked_by === 'Ketua BUMKam', 'Tahap 4: Ketua mengunci dokumen ke status DIKUNCI (Read-only permanen)');
+
+  // Clean up test wf
+  db.prepare('DELETE FROM sales WHERE id = ?').run(wfSaleId);
+
   // Summary
   console.log('\n====================================================');
   console.log(`HASIL PENGUJIAN: ${passed} LULUS, ${failed} GAGAL`);

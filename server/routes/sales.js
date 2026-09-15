@@ -4,8 +4,8 @@ import { authenticateToken, requireRole } from '../auth.js';
 
 const router = express.Router();
 
-// Restrict all sales management to ADMIN (Ketua BUMKam)
-router.use(authenticateToken, requireRole('ADMIN'));
+// Allow ADMIN (Ketua BUMKam) and PETUGAS_PENJUALAN
+router.use(authenticateToken, requireRole('ADMIN', 'PETUGAS_PENJUALAN'));
 
 // GET /api/sales
 router.get('/', (req, res) => {
@@ -110,13 +110,13 @@ router.post('/', authenticateToken, (req, res) => {
 
   try {
     transaction(() => {
-      // 1. Insert into sales
+      // 1. Insert into sales (defaults to DRAFT)
       db.prepare(`
         INSERT INTO sales (
           id, invoice_number, date, customer_name, quantity, unit, eggs_count,
           unit_price, total_amount, payment_method, payment_status, payment_date,
-          notes, created_by, created_by_name, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+          notes, workflow_status, created_by, created_by_name, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DRAFT', ?, ?, 'ACTIVE', ?, ?)
       `).run(
         saleId,
         invoiceNumber,
@@ -190,6 +190,14 @@ router.put('/:id', authenticateToken, (req, res) => {
   }
   if (sale.status === 'VOID') {
     return res.status(400).json({ error: 'Transaksi yang telah dibatalkan (VOID) tidak dapat diubah.' });
+  }
+
+  // Workflow Lock & Role Check
+  if (sale.workflow_status === 'DIKUNCI') {
+    return res.status(403).json({ error: 'Transaksi telah berstatus DIKUNCI oleh Ketua BUMKam dan tidak dapat diubah.' });
+  }
+  if (req.user.role === 'PETUGAS_PENJUALAN' && sale.workflow_status !== 'DRAFT') {
+    return res.status(403).json({ error: `Transaksi berstatus ${sale.workflow_status}. Petugas hanya dapat mengubah data berstatus DRAFT.` });
   }
 
   const {
@@ -306,8 +314,12 @@ router.put('/:id', authenticateToken, (req, res) => {
   }
 });
 
-// POST /api/sales/:id/void
+// POST /api/sales/:id/void (Admin only)
 router.post('/:id/void', authenticateToken, (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Hanya Ketua BUMKam yang memiliki wewenang untuk membatalkan (VOID) transaksi.' });
+  }
+
   const { reason } = req.body;
   const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(req.params.id);
   if (!sale) {
@@ -358,6 +370,96 @@ router.post('/:id/void', authenticateToken, (req, res) => {
     console.error('Error voiding sale:', err);
     res.status(500).json({ error: 'Gagal membatalkan transaksi: ' + err.message });
   }
+});
+
+// PATCH /api/sales/:id/workflow
+router.patch('/:id/workflow', authenticateToken, (req, res) => {
+  const sale = db.prepare('SELECT * FROM sales WHERE id = ?').get(req.params.id);
+  if (!sale) {
+    return res.status(404).json({ error: 'Transaksi penjualan tidak ditemukan.' });
+  }
+  if (sale.status === 'VOID') {
+    return res.status(400).json({ error: 'Transaksi berstatus VOID tidak dapat diubah alurnya.' });
+  }
+
+  const { target_status } = req.body;
+  const validStatuses = ['DRAFT', 'DIKIRIM', 'DIVERIFIKASI', 'DIKUNCI'];
+  if (!validStatuses.includes(target_status)) {
+    return res.status(400).json({ error: 'Status alur tidak valid.' });
+  }
+
+  const now = getWITTimestamp();
+  const isAdmin = req.user.role === 'ADMIN';
+
+  // Permissions rule:
+  // Petugas Penjualan can only transition DRAFT -> DIKIRIM
+  if (!isAdmin) {
+    if (sale.workflow_status === 'DRAFT' && target_status === 'DIKIRIM') {
+      // Allowed
+    } else {
+      return res.status(403).json({ error: 'Petugas hanya berhak mengajukan status DRAFT ke DIKIRIM.' });
+    }
+  }
+
+  let verifiedBy = sale.verified_by;
+  let verifiedAt = sale.verified_at;
+  let lockedBy = sale.locked_by;
+  let lockedAt = sale.locked_at;
+
+  if (target_status === 'DIVERIFIKASI') {
+    verifiedBy = req.user.name;
+    verifiedAt = now;
+  } else if (target_status === 'DIKUNCI') {
+    if (!verifiedBy) {
+      verifiedBy = req.user.name;
+      verifiedAt = now;
+    }
+    lockedBy = req.user.name;
+    lockedAt = now;
+  } else if (target_status === 'DRAFT') {
+    // Admin unlock back to DRAFT
+    lockedBy = null;
+    lockedAt = null;
+  }
+
+  db.prepare(`
+    UPDATE sales SET
+      workflow_status = ?,
+      verified_by = ?,
+      verified_at = ?,
+      locked_by = ?,
+      locked_at = ?,
+      updated_by = ?,
+      updated_by_name = ?,
+      updated_at = ?
+    WHERE id = ?
+  `).run(
+    target_status,
+    verifiedBy,
+    verifiedAt,
+    lockedBy,
+    lockedAt,
+    req.user.id,
+    req.user.name,
+    now,
+    sale.id
+  );
+
+  logAudit(
+    'WORKFLOW_UPDATE',
+    'SALES',
+    sale.id,
+    sale.invoice_number,
+    req.user.id,
+    req.user.name,
+    `Perubahan status alur transaksi ${sale.invoice_number}: ${sale.workflow_status} -> ${target_status}`
+  );
+
+  const updated = db.prepare('SELECT * FROM sales WHERE id = ?').get(sale.id);
+  res.json({
+    message: `Status transaksi berhasil diubah menjadi ${target_status}.`,
+    sale: updated
+  });
 });
 
 export default router;

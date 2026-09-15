@@ -159,6 +159,11 @@ export function initDatabase() {
       payment_status TEXT NOT NULL DEFAULT 'Lunas',
       payment_date TEXT,
       notes TEXT,
+      workflow_status TEXT NOT NULL DEFAULT 'DRAFT', -- 'DRAFT', 'DIKIRIM', 'DIVERIFIKASI', 'DIKUNCI'
+      verified_by TEXT,
+      verified_at TEXT,
+      locked_by TEXT,
+      locked_at TEXT,
       created_by TEXT NOT NULL,
       created_by_name TEXT,
       updated_by TEXT,
@@ -236,6 +241,11 @@ export function initDatabase() {
       vaccine_info TEXT,
       vitamin_info TEXT,
       notes TEXT,
+      workflow_status TEXT NOT NULL DEFAULT 'DRAFT', -- 'DRAFT', 'DIKIRIM', 'DIVERIFIKASI', 'DIKUNCI'
+      verified_by TEXT,
+      verified_at TEXT,
+      locked_by TEXT,
+      locked_at TEXT,
       created_by TEXT NOT NULL,
       created_by_name TEXT,
       updated_by TEXT,
@@ -257,6 +267,29 @@ export function initDatabase() {
       created_at TEXT NOT NULL
     );
   `);
+
+  // Safe column migrations for existing databases
+  try {
+    const salesCols = db.prepare("PRAGMA table_info(sales)").all().map(c => c.name);
+    if (!salesCols.includes('workflow_status')) {
+      db.exec("ALTER TABLE sales ADD COLUMN workflow_status TEXT NOT NULL DEFAULT 'DIVERIFIKASI'");
+      db.exec("ALTER TABLE sales ADD COLUMN verified_by TEXT");
+      db.exec("ALTER TABLE sales ADD COLUMN verified_at TEXT");
+      db.exec("ALTER TABLE sales ADD COLUMN locked_by TEXT");
+      db.exec("ALTER TABLE sales ADD COLUMN locked_at TEXT");
+    }
+
+    const recCols = db.prepare("PRAGMA table_info(chicken_recordings)").all().map(c => c.name);
+    if (!recCols.includes('workflow_status')) {
+      db.exec("ALTER TABLE chicken_recordings ADD COLUMN workflow_status TEXT NOT NULL DEFAULT 'DIVERIFIKASI'");
+      db.exec("ALTER TABLE chicken_recordings ADD COLUMN verified_by TEXT");
+      db.exec("ALTER TABLE chicken_recordings ADD COLUMN verified_at TEXT");
+      db.exec("ALTER TABLE chicken_recordings ADD COLUMN locked_by TEXT");
+      db.exec("ALTER TABLE chicken_recordings ADD COLUMN locked_at TEXT");
+    }
+  } catch (migErr) {
+    console.warn('Migration warning:', migErr.message);
+  }
 
   // Initialize Business Profile if empty
   const profileCount = db.prepare('SELECT COUNT(*) as cnt FROM business_profile').get();
@@ -289,42 +322,25 @@ export function initDatabase() {
     }
   }
 
-  // Initialize Default Users
-  const userCount = db.prepare('SELECT COUNT(*) as cnt FROM users').get();
-  if (!userCount || userCount.cnt === 0) {
-    const adminHash = bcrypt.hashSync('admin123', 10);
-    const petugasHash = bcrypt.hashSync('petugas123', 10);
+  // Initialize / Sync Default Users for the 3 RBAC Roles
+  const ensureUser = (username, password, name, role, jabatan, email, phone) => {
+    const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    const hash = bcrypt.hashSync(password, 10);
     const now = getWITTimestamp();
+    if (!existing) {
+      db.prepare(`
+        INSERT INTO users (id, username, password_hash, name, role, jabatan, email, phone, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(generateUUID(), username, hash, name, role, jabatan, email, phone, now, now);
+    } else {
+      db.prepare(`
+        UPDATE users SET role = ?, jabatan = ?, name = ?, updated_at = ? WHERE username = ?
+      `).run(role, jabatan, name, now, username);
+    }
+  };
 
-    const insertUser = db.prepare(`
-      INSERT INTO users (id, username, password_hash, name, role, jabatan, email, phone, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    insertUser.run(
-      generateUUID(),
-      'admin',
-      adminHash,
-      'Ketua BUMKam',
-      'ADMIN',
-      'Ketua BUMKam KOYABHU',
-      'ketua@bumkamkoyabhu.id',
-      '0812-3456-7890',
-      now,
-      now
-    );
-
-    insertUser.run(
-      generateUUID(),
-      'petugas',
-      petugasHash,
-      'Petugas Peternakan',
-      'PETUGAS',
-      'Pengelola Operasional Kandang',
-      'petugas@bumkamkoyabhu.id',
-      '0821-9876-5432',
-      now,
-      now
-    );
-  }
+  ensureUser('admin', 'admin123', 'Ketua BUMKam', 'ADMIN', 'Ketua BUMKam KOYABHU', 'ketua@bumkamkoyabhu.id', '0812-3456-7890');
+  ensureUser('petugas', 'petugas123', 'Petugas Kandang', 'PETUGAS_KANDANG', 'Pengelola Operasional Kandang', 'petugas@bumkamkoyabhu.id', '0821-9876-5432');
+  ensureUser('kandang', 'kandang123', 'Petugas Kandang', 'PETUGAS_KANDANG', 'Pengelola Operasional Kandang', 'kandang@bumkamkoyabhu.id', '0821-9876-5432');
+  ensureUser('penjualan', 'penjualan123', 'Petugas Penjualan', 'PETUGAS_PENJUALAN', 'Pengelola Penjualan Telur Harian', 'penjualan@bumkamkoyabhu.id', '0813-5555-8899');
 }

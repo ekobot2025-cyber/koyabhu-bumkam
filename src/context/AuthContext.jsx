@@ -59,13 +59,26 @@ export function AuthProvider({ children }) {
     localStorage.setItem('koyabhu_user', JSON.stringify(updatedUser));
   };
 
+  const isAdmin = user?.role === 'ADMIN';
+  const isPetugasKandang = user?.role === 'PETUGAS_KANDANG' || user?.role === 'PETUGAS';
+  const isPetugasPenjualan = user?.role === 'PETUGAS_PENJUALAN';
+
+  const allowedTabs = isAdmin
+    ? ['dashboard', 'sales', 'recording', 'cashbook', 'income', 'expenses', 'reports', 'settings']
+    : isPetugasPenjualan
+    ? ['sales']
+    : ['recording'];
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
         isAuthenticated: !!token && !!user,
-        isAdmin: user?.role === 'ADMIN',
+        isAdmin,
+        isPetugasKandang,
+        isPetugasPenjualan,
+        allowedTabs,
         loading,
         login,
         logout,

@@ -6,11 +6,19 @@ import {
   Trash2,
   Eye,
   CheckCircle,
+  CheckCircle2,
+  CheckCheck,
   Clock,
   Ban,
   FileSpreadsheet,
-  AlertCircle
+  AlertCircle,
+  Send,
+  Lock,
+  Unlock,
+  ShieldCheck,
+  Egg
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -20,6 +28,7 @@ import { formatRupiah, formatNumber, formatTanggalWIT, formatTanggalShort } from
 import { exportToCSV } from '../utils/exportHelpers';
 
 export default function Sales() {
+  const { user, isAdmin, isPetugasPenjualan } = useAuth();
   const [sales, setSales] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(false);
@@ -173,6 +182,16 @@ export default function Sales() {
     }
   };
 
+  // Handle Workflow Status Transition (Draft -> Dikirim -> Diverifikasi -> Dikunci)
+  const handleWorkflowChange = async (sale, targetStatus) => {
+    try {
+      await api.patch(`/sales/${sale.id}/workflow`, { target_status: targetStatus });
+      fetchSales(pagination.page);
+    } catch (err) {
+      alert('Gagal memperbarui status alur: ' + err.message);
+    }
+  };
+
   const handleExportCSV = () => {
     const headers = {
       invoice_number: 'No. Transaksi',
@@ -264,62 +283,155 @@ export default function Sales() {
       }
     },
     {
+      header: 'Alur Dokumen',
+      accessor: 'workflow_status',
+      render: (row) => {
+        const wf = row.workflow_status || 'DRAFT';
+        if (wf === 'DIKUNCI') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-white shadow-xs">
+              <Lock className="w-3 h-3 text-emerald-400" /> Dikunci
+            </span>
+          );
+        }
+        if (wf === 'DIVERIFIKASI') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#edf6d7] text-[#2c5b20] border border-[#d6ebbb]">
+              <CheckCircle2 className="w-3 h-3 text-[#55a938]" /> Diverifikasi
+            </span>
+          );
+        }
+        if (wf === 'DIKIRIM') {
+          return (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+              <Send className="w-3 h-3 text-sky-500" /> Diajukan
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-500" /> Draft
+          </span>
+        );
+      }
+    },
+    {
       header: 'Aksi',
       className: 'text-right',
-      render: (row) => (
-        <div className="flex items-center justify-end gap-1">
-          {/* Quick Pay Button if Belum Lunas and Active */}
-          {row.payment_status === 'Belum Lunas' && row.status === 'ACTIVE' && (
+      render: (row) => {
+        const isLocked = row.workflow_status === 'DIKUNCI';
+        const isDraft = !row.workflow_status || row.workflow_status === 'DRAFT';
+        const isSubmitted = row.workflow_status === 'DIKIRIM';
+        const isVerified = row.workflow_status === 'DIVERIFIKASI';
+
+        return (
+          <div className="flex items-center justify-end gap-1 flex-wrap">
+            {/* Quick Pay Button if Belum Lunas and Active */}
+            {row.payment_status === 'Belum Lunas' && row.status === 'ACTIVE' && (
+              <button
+                onClick={() => handleMarkAsLunas(row)}
+                title="Tandai Sudah Lunas"
+                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              >
+                Pelunasan
+              </button>
+            )}
+
+            {/* Workflow Action Transitions */}
+            {row.status === 'ACTIVE' && (
+              <>
+                {/* Petugas / Admin: Kirim ke Ketua if Draft */}
+                {isDraft && (
+                  <button
+                    onClick={() => handleWorkflowChange(row, 'DIKIRIM')}
+                    title="Ajukan ke Ketua BUMKam"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-sky-600 hover:bg-sky-700 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>Kirim</span>
+                  </button>
+                )}
+
+                {/* Admin: Verifikasi if Dikirim */}
+                {isAdmin && isSubmitted && (
+                  <button
+                    onClick={() => handleWorkflowChange(row, 'DIVERIFIKASI')}
+                    title="Verifikasi Transaksi Penjualan"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-[#55a938] hover:bg-[#46902e] text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+                  >
+                    <CheckCheck className="w-3 h-3" />
+                    <span>Verifikasi</span>
+                  </button>
+                )}
+
+                {/* Admin: Kunci if Diverifikasi */}
+                {isAdmin && isVerified && (
+                  <button
+                    onClick={() => handleWorkflowChange(row, 'DIKUNCI')}
+                    title="Kunci Transaksi (Permanen)"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span>Kunci</span>
+                  </button>
+                )}
+
+                {/* Admin: Buka Kunci if Dikunci */}
+                {isAdmin && isLocked && (
+                  <button
+                    onClick={() => handleWorkflowChange(row, 'DRAFT')}
+                    title="Buka Kunci untuk Koreksi"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+                  >
+                    <Unlock className="w-3 h-3" />
+                    <span>Buka</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Receipt Print button */}
             <button
-              onClick={() => handleMarkAsLunas(row)}
-              title="Tandai Sudah Lunas"
-              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition-colors cursor-pointer"
+              onClick={() => setReceiptSale(row)}
+              title="Cetak Bukti Transaksi"
+              className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
             >
-              Pelunasan
+              <Printer className="w-4 h-4" />
             </button>
-          )}
 
-          {/* Receipt Print button */}
-          <button
-            onClick={() => setReceiptSale(row)}
-            title="Cetak Bukti Transaksi"
-            className="p-1.5 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
-
-          {/* Detail button */}
-          <button
-            onClick={() => setDetailSale(row)}
-            title="Lihat Detail Transaksi"
-            className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-
-          {/* Edit button (only if active) */}
-          {row.status === 'ACTIVE' && (
+            {/* Detail button */}
             <button
-              onClick={() => handleOpenEdit(row)}
-              title="Edit Transaksi"
-              className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+              onClick={() => setDetailSale(row)}
+              title="Lihat Detail Transaksi"
+              className="p-1.5 text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
             >
-              <Edit2 className="w-4 h-4" />
+              <Eye className="w-4 h-4" />
             </button>
-          )}
 
-          {/* Void button (only if active) */}
-          {row.status === 'ACTIVE' && (
-            <button
-              onClick={() => setVoidSale(row)}
-              title="Batalkan (VOID) Transaksi"
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      )
+            {/* Edit button: Active, not locked, and permitted */}
+            {row.status === 'ACTIVE' && !isLocked && (isAdmin || isDraft) && (
+              <button
+                onClick={() => handleOpenEdit(row)}
+                title="Edit Transaksi"
+                className="p-1.5 text-slate-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Void button: Admin only, Active, and not locked */}
+            {isAdmin && row.status === 'ACTIVE' && !isLocked && (
+              <button
+                onClick={() => setVoidSale(row)}
+                title="Batalkan (VOID) Transaksi"
+                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
@@ -434,6 +546,39 @@ export default function Sales() {
                 placeholder="Contoh: Toko Berkah / Warung Mama"
                 className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500"
               />
+            </div>
+          </div>
+
+          {/* Touch Presets for Mobile Field Sales */}
+          <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+            <span className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+              Tombol Cepat Penjualan (Praktis di HP / Lapangan):
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: '1 Rak (30)', rak: 1 },
+                { label: '2 Rak (60)', rak: 2 },
+                { label: '3 Rak (90)', rak: 3 },
+                { label: '5 Rak (150)', rak: 5 },
+                { label: '10 Rak (300)', rak: 10 },
+                { label: '15 Rak (Peti)', rak: 15 }
+              ].map((p, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      quantity: p.rak,
+                      unit: 'rak',
+                      unit_price: prev.unit === 'rak' ? prev.unit_price : 60000
+                    }));
+                  }}
+                  className="px-2.5 py-1 text-[11px] font-bold bg-white border border-slate-300 hover:border-[#55a938] hover:bg-[#edf6d7] hover:text-[#18321c] text-slate-700 rounded-lg transition-colors cursor-pointer shadow-xs active:scale-95"
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 

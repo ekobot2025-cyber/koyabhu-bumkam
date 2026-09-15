@@ -175,7 +175,11 @@ export default function Topbar({ onMenuClick, activeTab, setActiveTab }) {
                 {user?.name || 'Pengguna'}
               </div>
               <div className="text-[11px] text-slate-500 font-medium">
-                {user?.role === 'ADMIN' ? 'Ketua BUMKam' : user?.jabatan || 'Petugas'}
+                {user?.role === 'ADMIN'
+                  ? 'Ketua BUMKam'
+                  : user?.role === 'PETUGAS_PENJUALAN'
+                  ? 'Petugas Penjualan'
+                  : 'Petugas Kandang'}
               </div>
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400 hidden sm:block" />

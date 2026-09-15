@@ -12,7 +12,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 
 function AppContent() {
-  const { user, isAuthenticated, loading, isAdmin } = useAuth();
+  const { user, isAuthenticated, loading, isAdmin, isPetugasPenjualan, allowedTabs } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   if (loading) {
@@ -31,7 +31,16 @@ function AppContent() {
     return <Login />;
   }
 
-  // PETUGAS KANDANG: Strictly restricted to ChickenRecording only
+  // Petugas Penjualan: Strictly restricted to Sales only
+  if (isPetugasPenjualan) {
+    return (
+      <Layout activeTab="sales" setActiveTab={() => {}}>
+        <Sales />
+      </Layout>
+    );
+  }
+
+  // Petugas Kandang: Strictly restricted to ChickenRecording only
   if (!isAdmin) {
     return (
       <Layout activeTab="recording" setActiveTab={() => {}}>
@@ -40,17 +49,20 @@ function AppContent() {
     );
   }
 
+  // Fallback guard: if activeTab is not allowed for user, fallback to first allowed tab
+  const currentTab = allowedTabs.includes(activeTab) ? activeTab : allowedTabs[0] || 'dashboard';
+
   // ADMIN (Ketua BUMKam): Full access to all operational & financial modules
   return (
-    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-      {activeTab === 'sales' && <Sales />}
-      {activeTab === 'recording' && <ChickenRecording />}
-      {activeTab === 'cashbook' && <CashBook />}
-      {activeTab === 'income' && <OtherIncome />}
-      {activeTab === 'expenses' && <Expenses />}
-      {activeTab === 'reports' && <Reports />}
-      {activeTab === 'settings' && <Settings />}
+    <Layout activeTab={currentTab} setActiveTab={setActiveTab}>
+      {currentTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
+      {currentTab === 'sales' && <Sales />}
+      {currentTab === 'recording' && <ChickenRecording />}
+      {currentTab === 'cashbook' && <CashBook />}
+      {currentTab === 'income' && <OtherIncome />}
+      {currentTab === 'expenses' && <Expenses />}
+      {currentTab === 'reports' && <Reports />}
+      {currentTab === 'settings' && <Settings />}
     </Layout>
   );
 }
