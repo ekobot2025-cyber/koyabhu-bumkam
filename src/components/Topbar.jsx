@@ -90,10 +90,10 @@ export default function Topbar({ onMenuClick, activeTab, setActiveTab }) {
 
         <div>
           <h2 className="text-lg font-extrabold text-[#18321c] leading-tight">
-            {titles[activeTab] || 'KOYABHU BUMKam'}
+            {titles[activeTab] || 'KOMPLIT'}
           </h2>
           <span className="hidden sm:block text-xs text-slate-500 font-medium">
-            BUMKam KOYABHU • Sentani Timur, Jayapura
+            KOMPLIT • BUMKam KOYABHU, Sentani Timur
           </span>
         </div>
       </div>

@@ -19,10 +19,10 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
         <div className="relative mb-4">
-          <img src="/logo.svg" alt="KOYABHU" className="w-16 h-16 animate-pulse" />
+          <img src="/logo.svg" alt="KOMPLIT" className="w-16 h-16 animate-pulse" />
         </div>
-        <h2 className="text-lg font-bold tracking-wider text-emerald-400">KOYABHU BUMKam</h2>
-        <p className="text-xs text-slate-400 mt-1">Memuat Sistem Informasi Peternakan & Keuangan...</p>
+        <h2 className="text-lg font-bold tracking-wider text-emerald-400">KOMPLIT</h2>
+        <p className="text-xs text-slate-400 mt-1">Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi</p>
       </div>
     );
   }

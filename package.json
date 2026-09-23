@@ -1,6 +1,7 @@
 {
-  "name": "koyabhu-bumkam",
+  "name": "komplit-bumkam",
   "version": "1.0.0",
+  "description": "KOMPLIT: Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi",
   "private": true,
   "type": "module",
   "engines": {

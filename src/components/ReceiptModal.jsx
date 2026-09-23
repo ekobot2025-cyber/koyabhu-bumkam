@@ -150,7 +150,8 @@ export default function ReceiptModal({ isOpen, onClose, sale }) {
           </div>
 
           <div className="mt-6 text-center text-[10px] text-slate-400">
-            Terima kasih telah bermitra dengan BUMKam KOYABHU.
+            Terima kasih telah bermitra dengan BUMKam KOYABHU.<br />
+            <span className="text-[9px] text-slate-400">Dicetak melalui KOMPLIT (Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi)</span>
           </div>
         </div>
 

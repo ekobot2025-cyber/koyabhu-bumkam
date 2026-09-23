@@ -28,7 +28,7 @@ export default function Layout({ activeTab, setActiveTab, children }) {
         </main>
 
         <footer className="py-4 px-6 border-t border-emerald-100/70 bg-white text-center text-xs text-slate-500 font-medium no-print">
-          © 2026 BUMKAM KOYABHU • Kelompok 3 Kelas B • Teknologi Digital Akuntansi • S1 Akuntansi FEB Uncen • All rights reserved.
+          © 2026 KOMPLIT - BUMKAM KOYABHU • Kelompok 3 Kelas B • Teknologi Digital Akuntansi • S1 Akuntansi FEB Uncen • All rights reserved.
         </footer>
       </div>
     </div>

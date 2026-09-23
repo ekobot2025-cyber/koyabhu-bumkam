@@ -102,21 +102,21 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, onClose }) {
             <div className="p-1 rounded-xl bg-white/10 border border-white/15">
               <img
                 src="/logo.svg"
-                alt="Logo KOYABHU"
+                alt="Logo KOMPLIT"
                 className="w-9 h-9 rounded-lg shrink-0"
               />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="font-black text-white tracking-wider text-base leading-tight">
-                  KOYABHU
+                  KOMPLIT
                 </h1>
                 <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-[#55a938] text-white font-bold">
                   BUMKam
                 </span>
               </div>
-              <span className="text-[11px] font-medium text-[#edf6d7] block tracking-wide">
-                Peternakan Ayam Petelur
+              <span className="text-[10px] font-medium text-[#edf6d7]/90 block tracking-tight truncate max-w-[145px]" title="Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi">
+                Koyabhu Manajemen Terpadu
               </span>
             </div>
           </div>

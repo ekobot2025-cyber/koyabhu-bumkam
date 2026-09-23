@@ -1,10 +1,10 @@
 import { db, initDatabase, transaction } from '../server/db.js';
 import { seedDemoData } from '../server/seed-data.js';
 
-// Automated Test Runner for BUMKam KOYABHU
+// Automated Test Runner for KOMPLIT (BUMKam KOYABHU)
 async function runTests() {
   console.log('====================================================');
-  console.log('MENJALANKAN PENGUJIAN FUNGSIONAL KOYABHU BUMKam');
+  console.log('MENJALANKAN PENGUJIAN FUNGSIONAL KOMPLIT BUMKam');
   console.log('====================================================\n');
 
   initDatabase();

@@ -106,7 +106,8 @@ router.get('/backup', authenticateToken, requireRole('ADMIN'), (req, res) => {
   const audit_logs = db.prepare('SELECT * FROM audit_logs').all();
 
   const backupData = {
-    appName: 'KOYABHU BUMKam',
+    appName: 'KOMPLIT',
+    appDescription: 'Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi',
     version: '1.0.0',
     exportedAt: getWITTimestamp(),
     exportedBy: req.user.name,

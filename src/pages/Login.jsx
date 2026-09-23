@@ -38,28 +38,28 @@ export default function Login() {
             <div className="p-2 rounded-2xl bg-white shadow-sm border border-emerald-100 flex items-center justify-center">
               <img
                 src="/logo.svg"
-                alt="Logo KOYABHU"
+                alt="Logo KOMPLIT"
                 className="w-9 h-9 object-contain"
               />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-black tracking-tight text-[#18321c]">
-                  KOYABHU
+                  KOMPLIT
                 </span>
                 <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#edf6d7] text-[#2c5b20] font-extrabold border border-[#d6ebbb]">
-                  BUMKam
+                  BUMKam KOYABHU
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium">
-                Kampung Koyabhu • Distrik Sentani Timur • Jayapura, Papua
+                Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi
               </p>
             </div>
           </div>
 
           <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-emerald-100/80 shadow-xs text-xs font-semibold text-[#18321c]">
             <span className="w-2 h-2 rounded-full bg-[#55a938] animate-pulse" />
-            <span>Sistem Informasi Manajemen Peternakan</span>
+            <span>KOMPLIT • Peternakan & Keuangan</span>
           </div>
         </div>
       </header>
@@ -122,7 +122,7 @@ export default function Login() {
               <div className="relative z-10 bg-white/92 backdrop-blur-md border border-white/95 rounded-2xl p-5 sm:p-6 shadow-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="px-2.5 py-0.5 rounded-full bg-[#edf6d7] text-[#2c5b20] text-[10px] font-black uppercase tracking-wider border border-[#d6ebbb]">
-                    Input Sekali • Terintegrasi Penuh
+                    KOMPLIT • Terintegrasi Penuh
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full bg-[#fff8db] text-[#b45309] text-[10px] font-bold border border-[#fed7aa]">
                     Transparan & Akuntabel
@@ -130,11 +130,11 @@ export default function Login() {
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-black text-[#18321c] tracking-tight leading-snug mb-2">
-                  Pengelolaan Usaha Peternakan Ayam Petelur & Kas Terpadu
+                  KOMPLIT: Koyabhu Manajemen Pencatatan, Laporan, Informasi & Transaksi
                 </h2>
                 
                 <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-                  Mulai dari pencatatan aktivitas kandang, panen telur harian, penjualan per rak, otomatisasi pembukuan buku kas tunai, hingga penyusunan laporan hasil usaha BUMKam.
+                  Sistem manajemen terpadu BUMKam KOYABHU: dari pencatatan aktivitas kandang & panen telur, penjualan per rak, otomatisasi buku kas, hingga penyusunan laporan hasil usaha.
                 </p>
 
                 {/* Bottom Feature Badges */}
@@ -161,13 +161,16 @@ export default function Login() {
               {/* Card Header */}
               <div className="text-center mb-6">
                 <div className="inline-flex p-3 rounded-2xl bg-[#edf6d7] border border-[#d6ebbb] mb-3 shadow-xs">
-                  <img src="/logo.svg" alt="KOYABHU" className="w-11 h-11 mx-auto" />
+                  <img src="/logo.svg" alt="KOMPLIT" className="w-11 h-11 mx-auto" />
                 </div>
                 <h2 className="text-2xl font-black text-[#18321c] tracking-tight">
-                  Masuk ke Akun Anda
+                  Masuk ke KOMPLIT
                 </h2>
                 <p className="text-xs text-slate-500 mt-1 font-medium">
-                  Sistem Informasi Manajemen BUMKam KOYABHU
+                  Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi
+                </p>
+                <p className="text-[11px] text-emerald-700 font-bold mt-0.5">
+                  BUMKam KOYABHU • Sentani Timur, Jayapura
                 </p>
               </div>
 
@@ -310,7 +313,7 @@ export default function Login() {
 
       {/* Official Footer */}
       <footer className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 text-center text-xs text-slate-500 font-medium border-t border-emerald-100/60 mt-4">
-        © 2026 BUMKAM KOYABHU • Kelompok 3 Kelas B • Teknologi Digital Akuntansi • S1 Akuntansi FEB Uncen • All rights reserved.
+        © 2026 KOMPLIT - BUMKAM KOYABHU • Kelompok 3 Kelas B • Teknologi Digital Akuntansi • S1 Akuntansi FEB Uncen • All rights reserved.
       </footer>
     </div>
   );

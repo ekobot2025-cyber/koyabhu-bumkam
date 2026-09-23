@@ -210,16 +210,16 @@ export default function Reports() {
       >
         {/* Official Letterhead (Kop Surat BUMKam KOYABHU) */}
         <div className="flex items-center gap-4 pb-4 border-b-2 border-slate-900 mb-6">
-          <img src="/logo.svg" alt="KOYABHU" className="w-16 h-16 rounded-xl" />
+          <img src="/logo.svg" alt="KOMPLIT" className="w-16 h-16 rounded-xl" />
           <div className="flex-1">
             <h2 className="text-xl font-black text-slate-900 tracking-wider">
               BADAN USAHA MILIK KAMPUNG (BUMKam) KOYABHU
             </h2>
             <h3 className="text-sm font-bold text-emerald-700">
-              UNIT USAHA PETERNAKAN AYAM PETELUR DAN KEUANGAN
+              KOMPLIT • SISTEM INFORMASI MANAJEMEN PETERNAKAN & KEUANGAN
             </h3>
             <p className="text-xs text-slate-600">
-              Kampung Koyabhu, Distrik Sentani Timur, Kabupaten Jayapura, Provinsi Papua
+              Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi • Sentani Timur, Jayapura, Papua
             </p>
           </div>
           <div className="text-right text-[11px] text-slate-500">

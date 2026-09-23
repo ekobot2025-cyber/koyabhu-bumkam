@@ -59,7 +59,8 @@ app.use('/api/demo', demoRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    app: 'KOYABHU BUMKam API',
+    app: 'KOMPLIT API',
+    description: 'Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi',
     time: new Date().toISOString(),
     timezone: 'Asia/Jayapura (WIT)',
     env: process.env.VERCEL ? 'vercel-serverless' : 'standalone'

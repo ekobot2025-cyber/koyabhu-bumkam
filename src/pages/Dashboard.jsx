@@ -85,13 +85,13 @@ export default function Dashboard({ setActiveTab }) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Ringkasan Usaha Peternakan BUMKam</span>
+            <span>KOMPLIT • Ringkasan Usaha BUMKam</span>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
               Live Data
             </span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Data operasional dan arus kas dihitung otomatis secara terintegrasi dari database.
+            KOMPLIT (Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi) — Data operasional & kas terintegrasi.
           </p>
         </div>
 

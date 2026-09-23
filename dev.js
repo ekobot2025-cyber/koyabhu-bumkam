@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 
-console.log('Memulai KOYABHU BUMKam (Backend Express & Frontend Vite)...');
+console.log('Memulai KOMPLIT BUMKam (Backend Express & Frontend Vite)...');
 
 const isWin = process.platform === 'win32';
 const npmCmd = isWin ? 'npm.cmd' : 'npm';

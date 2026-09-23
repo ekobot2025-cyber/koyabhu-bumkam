@@ -1,7 +1,8 @@
-# KOYABHU BUMKam
-### Sistem Informasi Manajemen Usaha Peternakan Ayam Petelur dan Keuangan Berbasis Web
+# KOMPLIT - BUMKam KOYABHU
+### Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi
+**Sistem Informasi Manajemen Usaha Peternakan Ayam Petelur & Keuangan Berbasis Web**
 
-Aplikasi web terpadu untuk Badan Usaha Milik Kampung (BUMKam) KOYABHU di Distrik Sentani Timur, Kabupaten Jayapura, Papua.
+Aplikasi web terpadu **KOMPLIT** (*Koyabhu Manajemen Pencatatan, Laporan, Informasi dan Transaksi*) dibangun khusus untuk Badan Usaha Milik Kampung (BUMKam) KOYABHU di Distrik Sentani Timur, Kabupaten Jayapura, Papua.
 
 Aplikasi ini menerapkan prinsip inti: **"INPUT SEKALI, DATA TERINTEGRASI"**, menghubungkan:
 ```
