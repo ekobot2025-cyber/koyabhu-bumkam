@@ -27,32 +27,112 @@
 
 /* Print stylesheet for clean official PDF / paper prints */
 @media print {
-  body {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+  @page {
+    margin: 8mm;
+    size: auto;
   }
 
-  header, aside, nav, button, .no-print {
+  html, body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* 1. Hide non-printable web chrome */
+  header, aside, nav, button, .no-print, [aria-label="Buka Menu"], [aria-label="Tutup"], footer {
     display: none !important;
   }
 
-  main {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
+  /* 2. Completely eliminate dark modal overlays, backdrops and filters */
+  .fixed.bg-slate-900\/60,
+  .bg-slate-900\/60,
+  .backdrop-blur-xs,
+  .backdrop-blur-md,
+  .backdrop-blur-sm {
+    display: none !important;
+    background: transparent !important;
+    opacity: 0 !important;
   }
 
-  #printable-report, #receipt-print-area {
+  /* 3. When printing from Receipt Modal: hide the background page completely */
+  body.receipt-modal-open main,
+  body:has(#receipt-print-area) main {
+    display: none !important;
+  }
+
+  /* Reset modal positioning so receipt flows naturally on the print page */
+  body.receipt-modal-open .fixed.inset-0,
+  body:has(#receipt-print-area) .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.receipt-modal-open .min-h-full,
+  body:has(#receipt-print-area) .min-h-full {
+    min-height: auto !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  body.receipt-modal-open [role="dialog"],
+  body.receipt-modal-open .relative.transform,
+  body:has(#receipt-print-area) .relative.transform {
+    position: static !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Hide the modal title bar header ("Bukti Transaksi Penjualan") */
+  body.receipt-modal-open .modal-header,
+  body.receipt-modal-open .px-6.py-4.border-b,
+  body:has(#receipt-print-area) .px-6.py-4.border-b {
+    display: none !important;
+  }
+
+  body.receipt-modal-open .px-6.py-5,
+  body:has(#receipt-print-area) .px-6.py-5 {
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* 4. Receipt print box styling */
+  #receipt-print-area {
+    display: block !important;
+    position: static !important;
+    margin: 0 auto !important;
+    max-width: 460px !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    padding: 20px !important;
+  }
+
+  /* 5. Reports page print area */
+  #printable-report {
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
     width: 100% !important;
-  }
-
-  /* Force background colors to print if needed */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 }
